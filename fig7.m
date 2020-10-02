@@ -26,7 +26,7 @@ figure(7)
 clf
 set(gcf,'color','w')
 set(gcf,'PaperUnits','centimeters')
-xSize = 5; ySize = 14;
+xSize = 18; ySize = 4.5;
 xLeft = (21-xSize)/2; yTop = (30-ySize)/2;
 set(gcf,'PaperPosition',[xLeft yTop xSize ySize])
 set(gcf,'Position',[10 100 xSize*50 ySize*50])
@@ -34,7 +34,7 @@ set(gcf,'Position',[10 100 xSize*50 ySize*50])
 labs = {'(a)','(b)','(c)'};
 ymax = 5;
 for i2=1:length(A)
-    subplot(length(A),1,i2)
+    subplot(1,length(A),i2)
     singstrat = permute(SINGSTRAT_SIGTAU_FAST(:,i2,:),[1,3,2]);
     outcome = permute(OUTCOME_SIGTAU_FAST(:,i2,:),[1,3,2]);
     
@@ -83,24 +83,26 @@ for i2=1:length(A)
     set(gca,'fontsize',10)
     set(gca,'ycolor','k')
     ylim([0,ymax])
-    text(SIGTAU(1),ymax*1.1,labs{i2},'fontsize',12)
+    text(SIGTAU(1),ymax*1.05,labs{i2},'fontsize',12)
     yyaxis right
     plot(SIGTAU,ALPHA,'k-','linewidth',1.5)
     set(gca,'ycolor','k')
     set(gca,'fontsize',10)
     ylim([0,1])
     box on
-    title(strcat('$a=',num2str(A(i2)),'$'),'interpreter','latex','fontsize',10);    
+    title(strcat('$a=',num2str(A(i2)),'$'),'interpreter','latex','fontsize',12);    
 end
 
-subplot(3,1,2)
+for i=1:3
+subplot(1,3,i)
 yyaxis left
 ylabel('Contact initiation rate, $c$','interpreter','latex','fontsize',16);
 yyaxis right
 ylabel('Virulence, $\alpha$','interpreter','latex','fontsize',16);
+end
 
-subplot(3,1,3)
-xlabel({'Information expiry rate/','transmission rate, $\sigma/\tau$'},'interpreter','latex','fontsize',16);
+subplot(1,3,2)
+xlabel({'Information expiry rate/transmission rate, $\sigma/\tau$'},'interpreter','latex','fontsize',16);
 
 % save2pdf('fig7.pdf')
 
@@ -108,7 +110,8 @@ function fig7_data
 
 % Fixed and default parameter values
 cmin = 0;
-cmax = 20;
+cmax = 5;
+a = 0.2;
 d = 0.5;
 kappa = 1;
 gamma = 0.2;
