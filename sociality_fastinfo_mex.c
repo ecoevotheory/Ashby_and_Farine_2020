@@ -1,5 +1,5 @@
 /*******************************************************************************************
- * [t,x,EQFLAG] = sociality_fastinfo_mex(t_max,a,b,c,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop)
+ * [t,x,EQFLAG] = sociality_fastinfo_mex(t_max,a,b,E,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop)
  ******************************************************************************************/
 
 #include <mex.h>
@@ -41,8 +41,8 @@ struct PARAM{
     double t_max;
     double a;
     double b;
-    double c;
-    double cc;
+    double E;
+    double EE;
     double d;
     double q; 
     double alpha;
@@ -84,8 +84,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         parameter= mxGetPr(prhs[2]);
         p.b= *parameter;
         parameter= mxGetPr(prhs[3]);
-        p.c= *parameter;
-        p.cc= p.c*p.c;
+        p.E= *parameter;
+        p.EE= p.E*p.E;
         parameter= mxGetPr(prhs[4]);
         p.d= *parameter;   
         parameter= mxGetPr(prhs[5]);        
@@ -334,7 +334,7 @@ void rkck(double *x, double *dxdt, double *xout, double *xerr, double h, struct 
  **************************************/
 void dynamic(double *x, double *dxdt, struct PARAM *p){
     
-    double S, I, N, Bcc;
+    double S, I, N, GEE;
     int i, j;
     
     /* Define classes */
@@ -342,10 +342,10 @@ void dynamic(double *x, double *dxdt, struct PARAM *p){
     I = x[1];
     N = S+I;
     
-    Bcc = FMAX(0, 1 - (p->sigma/FMAX(TINY,p->tau*p->cc)));
+    GEE = FMAX(0, 1 - (p->sigma/FMAX(TINY,p->tau*p->EE)));
     
-    dxdt[0] = (p->b - p->q*N)*N - p->beta*p->cc*S*I/FMAX(TINY,N) - p->d*(1-(1-p->a)*Bcc)*S + p->gamma*I;
-    dxdt[1] = p->beta*p->cc*S*I/FMAX(TINY,N) - (p->d*(1-(1-p->a)*Bcc) + p->alpha + p->gamma)*I;
+    dxdt[0] = (p->b - p->q*N)*N - p->beta*p->EE*S*I/FMAX(TINY,N) - p->d*(1-(1-p->a)*GEE)*S + p->gamma*I;
+    dxdt[1] = p->beta*p->EE*S*I/FMAX(TINY,N) - (p->d*(1-(1-p->a)*GEE) + p->alpha + p->gamma)*I;
 }
 
 /***************************************

@@ -1,5 +1,5 @@
 /***********************************************************************************************************
- * [t,SA,SB,IA,IB,EQFLAG] = sociality_slowinfo_competition_mex(t_max,a,b,c,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop,strain_total)
+ * [t,SP,SG,IP,IG,EQFLAG] = sociality_slowinfo_competition_mex(t_max,a,b,E,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop,strain_total)
  ***********************************************************************************************************/
 
 #include <mex.h>
@@ -56,10 +56,10 @@ struct PARAM{
 /*************************************
  * Function prototypes
  *************************************/
-int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, double *IB_out, double *EQFLAG, double *init_pop, double *c, struct PARAM *p);
-void rkqs(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *h, double *hnext, double *SA_SCALE, double *SB_SCALE, double *IA_SCALE, double *IB_SCALE, double *c, struct PARAM *p);
-void rkck(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *SAout, double *SBout, double *IAout, double *IBout, double *SAerr, double *SBerr, double *IAerr, double *IBerr, double h, double *c, struct PARAM *p);
-void dynamic(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *c, struct PARAM *p);
+int my_rungkut (double *T, double *SP_out, double *SG_out, double *IP_out, double *IG_out, double *EQFLAG, double *init_pop, double *E, struct PARAM *p);
+void rkqs(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *h, double *hnext, double *SP_SCALE, double *SG_SCALE, double *IP_SCALE, double *IG_SCALE, double *E, struct PARAM *p);
+void rkck(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *SPout, double *SGout, double *IPout, double *IGout, double *SPerr, double *SGerr, double *IPerr, double *IGerr, double h, double *E, struct PARAM *p);
+void dynamic(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *E, struct PARAM *p);
 double FMAX(double, double);
 double FMIN(double, double);
 
@@ -68,8 +68,8 @@ double FMIN(double, double);
  *************************************/
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-    double *T, *SA, *SB, *IA, *IB, *EQFLAG, *init_pop, *c, *parameter;
-    double *t_temp, *SA_temp, *SB_temp, *IA_temp, *IB_temp;
+    double *T, *SP, *SG, *IP, *IG, *EQFLAG, *init_pop, *E, *parameter;
+    double *t_temp, *SP_temp, *SG_temp, *IP_temp, *IG_temp;
     int i, j, k, colLen, maxsteps;
     struct PARAM p;
     
@@ -84,7 +84,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         p.a= *parameter;
         parameter= mxGetPr(prhs[2]);
         p.b= *parameter;
-        c= mxGetPr(prhs[3]);
+        E= mxGetPr(prhs[3]);
         parameter= mxGetPr(prhs[4]);
         p.d= *parameter;   
         parameter= mxGetPr(prhs[5]);        
@@ -109,10 +109,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     /* Allocate memory */
     t_temp = malloc(maxsteps*sizeof(double));
-    SA_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
-    SB_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
-    IA_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
-    IB_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
+    SP_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
+    SG_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
+    IP_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
+    IG_temp = malloc(maxsteps*(p.strain_total)*sizeof(double));
     
     /* Initialise this output */           
     plhs[5] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -120,7 +120,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     EQFLAG[0] = 0;
     
     /* Call ODE solver */
-    colLen = my_rungkut(t_temp, SA_temp, SB_temp, IA_temp, IB_temp, EQFLAG, init_pop, c, &p);
+    colLen = my_rungkut(t_temp, SP_temp, SG_temp, IP_temp, IG_temp, EQFLAG, init_pop, E, &p);
     
     /* Create outputs */
     plhs[0] = mxCreateDoubleMatrix(colLen, 1, mxREAL);
@@ -129,28 +129,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[3] = mxCreateDoubleMatrix(colLen, p.strain_total, mxREAL);
     plhs[4] = mxCreateDoubleMatrix(colLen, p.strain_total, mxREAL);
     T = mxGetPr(plhs[0]);
-    SA = mxGetPr(plhs[1]);
-    SB = mxGetPr(plhs[2]);
-    IA = mxGetPr(plhs[3]);
-    IB = mxGetPr(plhs[4]);
+    SP = mxGetPr(plhs[1]);
+    SG = mxGetPr(plhs[2]);
+    IP = mxGetPr(plhs[3]);
+    IG = mxGetPr(plhs[4]);
     
     /* Copy data to outputs */
     for (i=0;i<colLen;i++){
         T[i] = t_temp[i];
         for (j=0;j<p.strain_total;j++) {
-            SA[i + j*colLen] = SA_temp[i + j*maxsteps];
-            SB[i + j*colLen] = SB_temp[i + j*maxsteps];
-            IA[i + j*colLen] = IA_temp[i + j*maxsteps];
-            IB[i + j*colLen] = IB_temp[i + j*maxsteps];
+            SP[i + j*colLen] = SP_temp[i + j*maxsteps];
+            SG[i + j*colLen] = SG_temp[i + j*maxsteps];
+            IP[i + j*colLen] = IP_temp[i + j*maxsteps];
+            IG[i + j*colLen] = IG_temp[i + j*maxsteps];
         }
     }
     
     /* Free memory */
     free(t_temp);
-    free(SA_temp);
-    free(SB_temp);
-    free(IA_temp);
-    free(IB_temp);
+    free(SP_temp);
+    free(SG_temp);
+    free(IP_temp);
+    free(IG_temp);
     
     return;
 }
@@ -158,34 +158,34 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 /*****************************************
  * ODE solver
  ****************************************/
-int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, double *IB_out, double *EQFLAG, double *init_pop, double *c, struct PARAM *p){
+int my_rungkut (double *T, double *SP_out, double *SG_out, double *IP_out, double *IG_out, double *EQFLAG, double *init_pop, double *E, struct PARAM *p){
     
-    double *SA, *SB, *IA, *IB, *DSADT, *DSBDT, *DIADT, *DIBDT, *SA_SCALE, *SB_SCALE, *IA_SCALE, *IB_SCALE;
-    double *SAMIN, *SAMAX, *SBMIN, *SBMAX, *IAMIN, *IAMAX, *IBMIN, *IBMAX, hnext[1], h[1];
+    double *SP, *SG, *IP, *IG, *DSPDT, *DSGDT, *DIPDT, *DIGDT, *SP_SCALE, *SG_SCALE, *IP_SCALE, *IG_SCALE;
+    double *SPMIN, *SPMAX, *SGMIN, *SGMAX, *IPMIN, *IPMAX, *IGMIN, *IGMAX, hnext[1], h[1];
     double t, nextcheck;
     int i, j, k, exitflag, count, maxsteps;
     
     /* Allocate memory */
-    SA = malloc(p->strain_total*sizeof(double));
-    SB = malloc(p->strain_total*sizeof(double));
-    IA = malloc(p->strain_total*sizeof(double));
-    IB = malloc(p->strain_total*sizeof(double));
-    DSADT = malloc(p->strain_total*sizeof(double));
-    DSBDT = malloc(p->strain_total*sizeof(double));
-    DIADT = malloc(p->strain_total*sizeof(double));
-    DIBDT = malloc(p->strain_total*sizeof(double));
-    SA_SCALE = malloc(p->strain_total*sizeof(double));
-    SB_SCALE = malloc(p->strain_total*sizeof(double));
-    IA_SCALE = malloc(p->strain_total*sizeof(double));
-    IB_SCALE = malloc(p->strain_total*sizeof(double));
-    SAMIN = malloc(p->strain_total*sizeof(double));
-    SBMIN = malloc(p->strain_total*sizeof(double));
-    IAMIN = malloc(p->strain_total*sizeof(double));
-    IBMIN = malloc(p->strain_total*sizeof(double));    
-    SAMAX = malloc(p->strain_total*sizeof(double));
-    SBMAX = malloc(p->strain_total*sizeof(double));
-    IAMAX = malloc(p->strain_total*sizeof(double));
-    IBMAX = malloc(p->strain_total*sizeof(double));
+    SP = malloc(p->strain_total*sizeof(double));
+    SG = malloc(p->strain_total*sizeof(double));
+    IP = malloc(p->strain_total*sizeof(double));
+    IG = malloc(p->strain_total*sizeof(double));
+    DSPDT = malloc(p->strain_total*sizeof(double));
+    DSGDT = malloc(p->strain_total*sizeof(double));
+    DIPDT = malloc(p->strain_total*sizeof(double));
+    DIGDT = malloc(p->strain_total*sizeof(double));
+    SP_SCALE = malloc(p->strain_total*sizeof(double));
+    SG_SCALE = malloc(p->strain_total*sizeof(double));
+    IP_SCALE = malloc(p->strain_total*sizeof(double));
+    IG_SCALE = malloc(p->strain_total*sizeof(double));
+    SPMIN = malloc(p->strain_total*sizeof(double));
+    SGMIN = malloc(p->strain_total*sizeof(double));
+    IPMIN = malloc(p->strain_total*sizeof(double));
+    IGMIN = malloc(p->strain_total*sizeof(double));    
+    SPMAX = malloc(p->strain_total*sizeof(double));
+    SGMAX = malloc(p->strain_total*sizeof(double));
+    IPMAX = malloc(p->strain_total*sizeof(double));
+    IGMAX = malloc(p->strain_total*sizeof(double));
     
     /* Other parameters */
     exitflag = 1;
@@ -199,31 +199,31 @@ int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, doubl
     
     /* Initialise populations */
     for(i=0;i<p->strain_total;i++){
-        SA[i] = init_pop[i*4];
-        SB[i] = init_pop[i*4+1];
-        IA[i] = init_pop[i*4+2];
-        IB[i] = init_pop[i*4+3];
+        SP[i] = init_pop[i*4];
+        SG[i] = init_pop[i*4+1];
+        IP[i] = init_pop[i*4+2];
+        IG[i] = init_pop[i*4+3];
     }
     
     /* Initialise equilibrium arrays */
     for(i=0;i<p->strain_total;i++){
-        SAMIN[i] = SA[i];
-        SAMAX[i] = SA[i];
-        SBMIN[i] = SB[i];
-        SBMAX[i] = SB[i];
-        IAMIN[i] = IA[i];
-        IAMAX[i] = IA[i];
-        IBMIN[i] = IB[i];
-        IBMAX[i] = IB[i];
+        SPMIN[i] = SP[i];
+        SPMAX[i] = SP[i];
+        SGMIN[i] = SG[i];
+        SGMAX[i] = SG[i];
+        IPMIN[i] = IP[i];
+        IPMAX[i] = IP[i];
+        IGMIN[i] = IG[i];
+        IGMAX[i] = IG[i];
     }
     
     /* Update output */
     T[0]=t;
     for (i=0; i<p->strain_total; i++) {
-        SA_out[i*maxsteps] = SA[i];
-        SB_out[i*maxsteps] = SB[i];
-        IA_out[i*maxsteps] = IA[i];
-        IB_out[i*maxsteps] = IB[i];
+        SP_out[i*maxsteps] = SP[i];
+        SG_out[i*maxsteps] = SG[i];
+        IP_out[i*maxsteps] = IP[i];
+        IG_out[i*maxsteps] = IG[i];
     }
     
     /* Main loop: */
@@ -244,58 +244,58 @@ int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, doubl
             exitflag=0;
         }
         /* This is where the equations are first solved */
-        dynamic(SA, SB, IA, IB, DSADT, DSBDT, DIADT, DIBDT, c, p);
+        dynamic(SP, SG, IP, IG, DSPDT, DSGDT, DIPDT, DIGDT, E, p);
 
         /* Adjust the step size to maintain accuracy */
         for (i=0; i<p->strain_total; i++){
-            SA[i] = FMAX(SA[i],0);
-            SB[i] = FMAX(SB[i],0);
-            IA[i] = FMAX(IA[i],0);
-            IB[i] = FMAX(IB[i],0);
-            SA_SCALE[i]=fabs(SA[i])+fabs(DSADT[i]*(*h))+TINY;
-            SB_SCALE[i]=fabs(SB[i])+fabs(DSBDT[i]*(*h))+TINY;
-            IA_SCALE[i]=fabs(IA[i])+fabs(DIADT[i]*(*h))+TINY;
-            IB_SCALE[i]=fabs(IB[i])+fabs(DIBDT[i]*(*h))+TINY;
+            SP[i] = FMAX(SP[i],0);
+            SG[i] = FMAX(SG[i],0);
+            IP[i] = FMAX(IP[i],0);
+            IG[i] = FMAX(IG[i],0);
+            SP_SCALE[i]=fabs(SP[i])+fabs(DSPDT[i]*(*h))+TINY;
+            SG_SCALE[i]=fabs(SG[i])+fabs(DSGDT[i]*(*h))+TINY;
+            IP_SCALE[i]=fabs(IP[i])+fabs(DIPDT[i]*(*h))+TINY;
+            IG_SCALE[i]=fabs(IG[i])+fabs(DIGDT[i]*(*h))+TINY;
         }
         
         /* RK solver & adaptive step-size */
-        rkqs(SA, SB, IA, IB, DSADT, DSBDT, DIADT, DIBDT, h, hnext, SA_SCALE, SB_SCALE, IA_SCALE, IB_SCALE, c, p);
+        rkqs(SP, SG, IP, IG, DSPDT, DSGDT, DIPDT, DIGDT, h, hnext, SP_SCALE, SG_SCALE, IP_SCALE, IG_SCALE, E, p);
         
         /* Make sure nothin has gone negative */
         for (i=0; i<p->strain_total; i++){
-            SA[i] = FMAX(SA[i],0);
-            SB[i] = FMAX(SB[i],0);
-            IA[i] = FMAX(IA[i],0);
-            IB[i] = FMAX(IB[i],0);
+            SP[i] = FMAX(SP[i],0);
+            SG[i] = FMAX(SG[i],0);
+            IP[i] = FMAX(IP[i],0);
+            IG[i] = FMAX(IG[i],0);
         }
         
         /* Update output */
         count++;
         T[count] = t;
         for (i=0; i<p->strain_total; i++) {
-            SA_out[count + i*maxsteps] = SA[i];
-            SB_out[count + i*maxsteps] = SB[i];
-            IA_out[count + i*maxsteps] = IA[i];
-            IB_out[count + i*maxsteps] = IB[i];
+            SP_out[count + i*maxsteps] = SP[i];
+            SG_out[count + i*maxsteps] = SG[i];
+            IP_out[count + i*maxsteps] = IP[i];
+            IG_out[count + i*maxsteps] = IG[i];
         }
     
         /* For equilibrium check */
         for (i=0; i<p->strain_total; i++){
-            SAMIN[i] = FMIN(SAMIN[i],SA[i]);
-            SBMIN[i] = FMIN(SBMIN[i],SB[i]);
-            SAMAX[i] = FMAX(SAMAX[i],SA[i]);
-            SBMAX[i] = FMAX(SBMAX[i],SB[i]);
-            IAMIN[i] = FMIN(IAMIN[i],IA[i]);
-            IBMIN[i] = FMIN(IBMIN[i],IB[i]);
-            IAMAX[i] = FMAX(IAMAX[i],IA[i]);
-            IBMAX[i] = FMAX(IBMAX[i],IB[i]);
+            SPMIN[i] = FMIN(SPMIN[i],SP[i]);
+            SGMIN[i] = FMIN(SGMIN[i],SG[i]);
+            SPMAX[i] = FMAX(SPMAX[i],SP[i]);
+            SGMAX[i] = FMAX(SGMAX[i],SG[i]);
+            IPMIN[i] = FMIN(IPMIN[i],IP[i]);
+            IGMIN[i] = FMIN(IGMIN[i],IG[i]);
+            IPMAX[i] = FMAX(IPMAX[i],IP[i]);
+            IGMAX[i] = FMAX(IGMAX[i],IG[i]);
         }
         
         /* Check if we're close to equilibrium */
         if(t>nextcheck){
             exitflag = 0;
             for (i=0; i<p->strain_total; i++){
-                if(fabs(SAMAX[i]-SAMIN[i])>p->eqtol || fabs(SBMAX[i]-SBMIN[i])>p->eqtol || fabs(IAMAX[i]-IAMIN[i])>p->eqtol || fabs(IBMAX[i]-IBMIN[i])>p->eqtol){
+                if(fabs(SPMAX[i]-SPMIN[i])>p->eqtol || fabs(SGMAX[i]-SGMIN[i])>p->eqtol || fabs(IPMAX[i]-IPMIN[i])>p->eqtol || fabs(IGMAX[i]-IGMIN[i])>p->eqtol){
                     exitflag = 1;
                     break;
                 }
@@ -311,40 +311,40 @@ int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, doubl
             /* If not, then reset min/max values for each class */
             nextcheck+=INTERVAL;
             for (i=0; i<p->strain_total; i++){
-                SAMIN[i] = SA[i];
-                SBMIN[i] = SB[i];
-                SAMAX[i] = SA[i];
-                SBMAX[i] = SB[i];
-                IAMIN[i] = IA[i];
-                IBMIN[i] = IB[i];
-                IAMAX[i] = IA[i];
-                IBMAX[i] = IB[i];
+                SPMIN[i] = SP[i];
+                SGMIN[i] = SG[i];
+                SPMAX[i] = SP[i];
+                SGMAX[i] = SG[i];
+                IPMIN[i] = IP[i];
+                IGMIN[i] = IG[i];
+                IPMAX[i] = IP[i];
+                IGMAX[i] = IG[i];
             }
         }
     }while(count<(maxsteps-1) && t<=p->t_max && exitflag);
     count++;
     
     /* Free memory */
-    free(SA);
-    free(SB);
-    free(IA);
-    free(IB);
-    free(DSADT);
-    free(DSBDT);
-    free(DIADT);
-    free(DIBDT);
-    free(SA_SCALE);
-    free(SB_SCALE);
-    free(IA_SCALE);
-    free(IB_SCALE);
-    free(SAMIN);
-    free(SBMIN);
-    free(IAMIN);
-    free(IBMIN);
-    free(SAMAX);
-    free(SBMAX);
-    free(IAMAX);
-    free(IBMAX);
+    free(SP);
+    free(SG);
+    free(IP);
+    free(IG);
+    free(DSPDT);
+    free(DSGDT);
+    free(DIPDT);
+    free(DIGDT);
+    free(SP_SCALE);
+    free(SG_SCALE);
+    free(IP_SCALE);
+    free(IG_SCALE);
+    free(SPMIN);
+    free(SGMIN);
+    free(IPMIN);
+    free(IGMIN);
+    free(SPMAX);
+    free(SGMAX);
+    free(IPMAX);
+    free(IGMAX);
     
     return count;
 }
@@ -352,33 +352,33 @@ int my_rungkut (double *T, double *SA_out, double *SB_out, double *IA_out, doubl
 /***************************************
  * This generates the adaptive step-size
  **************************************/
-void rkqs(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *h, double *hnext, double *SA_SCALE, double *SB_SCALE, double *IA_SCALE, double *IB_SCALE, double *c, struct PARAM *p)
+void rkqs(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *h, double *hnext, double *SP_SCALE, double *SG_SCALE, double *IP_SCALE, double *IG_SCALE, double *E, struct PARAM *p)
 {
-    double *SA_temp, *SB_temp, *IA_temp, *IB_temp, *SA_err, *SB_err, *IA_err, *IB_err;
+    double *SP_temp, *SG_temp, *IP_temp, *IG_temp, *SP_err, *SG_err, *IP_err, *IG_err;
     double htemp, errmax;
     int i, j, count;
     
     /* Allocate memory */
-    SA_temp = malloc(p->strain_total*sizeof(double));
-    SB_temp = malloc(p->strain_total*sizeof(double));
-    IA_temp = malloc(p->strain_total*sizeof(double));
-    IB_temp = malloc(p->strain_total*sizeof(double));
-    SA_err = malloc(p->strain_total*sizeof(double));
-    SB_err = malloc(p->strain_total*sizeof(double));
-    IA_err = malloc(p->strain_total*sizeof(double));
-    IB_err = malloc(p->strain_total*sizeof(double));
+    SP_temp = malloc(p->strain_total*sizeof(double));
+    SG_temp = malloc(p->strain_total*sizeof(double));
+    IP_temp = malloc(p->strain_total*sizeof(double));
+    IG_temp = malloc(p->strain_total*sizeof(double));
+    SP_err = malloc(p->strain_total*sizeof(double));
+    SG_err = malloc(p->strain_total*sizeof(double));
+    IP_err = malloc(p->strain_total*sizeof(double));
+    IG_err = malloc(p->strain_total*sizeof(double));
     
     count = 0;
     for(;;)
     {
-        rkck(SA, SB, IA, IB, DSADT, DSBDT, DIADT, DIBDT, SA_temp, SB_temp, IA_temp, IB_temp, SA_err, SB_err, IA_err, IB_err, *h, c, p);
+        rkck(SP, SG, IP, IG, DSPDT, DSGDT, DIPDT, DIGDT, SP_temp, SG_temp, IP_temp, IG_temp, SP_err, SG_err, IP_err, IG_err, *h, E, p);
         
         errmax= 0.0;
         for(i=0;i<p->strain_total;i++){
-            errmax= FMAX(errmax, fabs(SA_err[i]/(SA_SCALE[i])));
-            errmax= FMAX(errmax, fabs(SB_err[i]/(SB_SCALE[i]))); 
-            errmax= FMAX(errmax, fabs(IA_err[i]/(IA_SCALE[i])));
-            errmax= FMAX(errmax, fabs(IB_err[i]/(IB_SCALE[i])));   
+            errmax= FMAX(errmax, fabs(SP_err[i]/(SP_SCALE[i])));
+            errmax= FMAX(errmax, fabs(SG_err[i]/(SG_SCALE[i]))); 
+            errmax= FMAX(errmax, fabs(IP_err[i]/(IP_SCALE[i])));
+            errmax= FMAX(errmax, fabs(IG_err[i]/(IG_SCALE[i])));   
         }
         errmax/= EPS;
         if(errmax<=1.0) break;
@@ -401,154 +401,154 @@ void rkqs(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double
     *hnext = FMAX(*hnext, p->t_max/MAXSTEPS);
     
     for(i=0;i<p->strain_total;i++){
-        SA[i] = SA_temp[i];
-        SB[i] = SB_temp[i];
-        IA[i] = IA_temp[i];
-        IB[i] = IB_temp[i];
+        SP[i] = SP_temp[i];
+        SG[i] = SG_temp[i];
+        IP[i] = IP_temp[i];
+        IG[i] = IG_temp[i];
     }
     
     /* Free memory */
-    free(SA_temp);
-    free(SB_temp);
-    free(IA_temp);
-    free(IB_temp);
-    free(SA_err);
-    free(SB_err);
-    free(IA_err);
-    free(IB_err);
+    free(SP_temp);
+    free(SG_temp);
+    free(IP_temp);
+    free(IG_temp);
+    free(SP_err);
+    free(SG_err);
+    free(IP_err);
+    free(IG_err);
 }
 
 /**************************************
  * Standard RK solver
  **************************************/
-void rkck(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *SAout, double *SBout, double *IAout, double *IBout, double *SAerr, double *SBerr, double *IAerr, double *IBerr, double h, double *c, struct PARAM *p){
+void rkck(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *SPout, double *SGout, double *IPout, double *IGout, double *SPerr, double *SGerr, double *IPerr, double *IGerr, double h, double *E, struct PARAM *p){
     int i, j;
-    double *SAk1, *SAk2, *SAk3, *SAk4, *SAk5, *SAk6, *SAtemp;
-    double *SBk1, *SBk2, *SBk3, *SBk4, *SBk5, *SBk6, *SBtemp;
-    double *IAk1, *IAk2, *IAk3, *IAk4, *IAk5, *IAk6, *IAtemp;
-    double *IBk1, *IBk2, *IBk3, *IBk4, *IBk5, *IBk6, *IBtemp;
+    double *SPk1, *SPk2, *SPk3, *SPk4, *SPk5, *SPk6, *SPtemp;
+    double *SGk1, *SGk2, *SGk3, *SGk4, *SGk5, *SGk6, *SGtemp;
+    double *IPk1, *IPk2, *IPk3, *IPk4, *IPk5, *IPk6, *IPtemp;
+    double *IGk1, *IGk2, *IGk3, *IGk4, *IGk5, *IGk6, *IGtemp;
     double dc1=c1-2825.0/27648.0, dc3=c3-18575.0/48384.0, dc4=c4-13525.0/55296.0, 
             dc6=c6-0.25;
     
     /* Allocate memory */    
-    SAk1 = malloc(p->strain_total*sizeof(double));
-    SAk2 = malloc(p->strain_total*sizeof(double));
-    SAk3 = malloc(p->strain_total*sizeof(double));
-    SAk4 = malloc(p->strain_total*sizeof(double));
-    SAk5 = malloc(p->strain_total*sizeof(double));
-    SAk6 = malloc(p->strain_total*sizeof(double));
-    SAtemp = malloc(p->strain_total*sizeof(double));
+    SPk1 = malloc(p->strain_total*sizeof(double));
+    SPk2 = malloc(p->strain_total*sizeof(double));
+    SPk3 = malloc(p->strain_total*sizeof(double));
+    SPk4 = malloc(p->strain_total*sizeof(double));
+    SPk5 = malloc(p->strain_total*sizeof(double));
+    SPk6 = malloc(p->strain_total*sizeof(double));
+    SPtemp = malloc(p->strain_total*sizeof(double));
     
-    SBk1 = malloc(p->strain_total*sizeof(double));
-    SBk2 = malloc(p->strain_total*sizeof(double));
-    SBk3 = malloc(p->strain_total*sizeof(double));
-    SBk4 = malloc(p->strain_total*sizeof(double));
-    SBk5 = malloc(p->strain_total*sizeof(double));
-    SBk6 = malloc(p->strain_total*sizeof(double));
-    SBtemp = malloc(p->strain_total*sizeof(double));
+    SGk1 = malloc(p->strain_total*sizeof(double));
+    SGk2 = malloc(p->strain_total*sizeof(double));
+    SGk3 = malloc(p->strain_total*sizeof(double));
+    SGk4 = malloc(p->strain_total*sizeof(double));
+    SGk5 = malloc(p->strain_total*sizeof(double));
+    SGk6 = malloc(p->strain_total*sizeof(double));
+    SGtemp = malloc(p->strain_total*sizeof(double));
     
-    IAk1 = malloc(p->strain_total*sizeof(double));
-    IAk2 = malloc(p->strain_total*sizeof(double));
-    IAk3 = malloc(p->strain_total*sizeof(double));
-    IAk4 = malloc(p->strain_total*sizeof(double));
-    IAk5 = malloc(p->strain_total*sizeof(double));
-    IAk6 = malloc(p->strain_total*sizeof(double));
-    IAtemp = malloc(p->strain_total*sizeof(double));
+    IPk1 = malloc(p->strain_total*sizeof(double));
+    IPk2 = malloc(p->strain_total*sizeof(double));
+    IPk3 = malloc(p->strain_total*sizeof(double));
+    IPk4 = malloc(p->strain_total*sizeof(double));
+    IPk5 = malloc(p->strain_total*sizeof(double));
+    IPk6 = malloc(p->strain_total*sizeof(double));
+    IPtemp = malloc(p->strain_total*sizeof(double));
     
-    IBk1 = malloc(p->strain_total*sizeof(double));
-    IBk2 = malloc(p->strain_total*sizeof(double));
-    IBk3 = malloc(p->strain_total*sizeof(double));
-    IBk4 = malloc(p->strain_total*sizeof(double));
-    IBk5 = malloc(p->strain_total*sizeof(double));
-    IBk6 = malloc(p->strain_total*sizeof(double));  
-    IBtemp = malloc(p->strain_total*sizeof(double));  
+    IGk1 = malloc(p->strain_total*sizeof(double));
+    IGk2 = malloc(p->strain_total*sizeof(double));
+    IGk3 = malloc(p->strain_total*sizeof(double));
+    IGk4 = malloc(p->strain_total*sizeof(double));
+    IGk5 = malloc(p->strain_total*sizeof(double));
+    IGk6 = malloc(p->strain_total*sizeof(double));  
+    IGtemp = malloc(p->strain_total*sizeof(double));  
     
     for(i=0;i<p->strain_total;i++){
-        SAtemp[i] = SA[i] + b21*h*DSADT[i];
-        SBtemp[i] = SB[i] + b21*h*DSBDT[i];
-        IAtemp[i] = IA[i] + b21*h*DIADT[i];
-        IBtemp[i] = IB[i] + b21*h*DIBDT[i];
+        SPtemp[i] = SP[i] + b21*h*DSPDT[i];
+        SGtemp[i] = SG[i] + b21*h*DSGDT[i];
+        IPtemp[i] = IP[i] + b21*h*DIPDT[i];
+        IGtemp[i] = IG[i] + b21*h*DIGDT[i];
     }
-    dynamic(SAtemp, SBtemp, IAtemp, IBtemp, SAk2, SBk2, IAk2, IBk2, c, p);
+    dynamic(SPtemp, SGtemp, IPtemp, IGtemp, SPk2, SGk2, IPk2, IGk2, E, p);
     
     for(i=0;i<p->strain_total;i++){
-        SAtemp[i] = SA[i]+h*(b31*DSADT[i]+b32*SAk2[i]);
-        SBtemp[i] = SB[i]+h*(b31*DSBDT[i]+b32*SBk2[i]);
-        IAtemp[i] = IA[i]+h*(b31*DIADT[i]+b32*IAk2[i]);
-        IBtemp[i] = IB[i]+h*(b31*DIBDT[i]+b32*IBk2[i]);
+        SPtemp[i] = SP[i]+h*(b31*DSPDT[i]+b32*SPk2[i]);
+        SGtemp[i] = SG[i]+h*(b31*DSGDT[i]+b32*SGk2[i]);
+        IPtemp[i] = IP[i]+h*(b31*DIPDT[i]+b32*IPk2[i]);
+        IGtemp[i] = IG[i]+h*(b31*DIGDT[i]+b32*IGk2[i]);
     }    
-    dynamic(SAtemp, SBtemp, IAtemp, IBtemp, SAk3, SBk3, IAk3, IBk3, c, p);
+    dynamic(SPtemp, SGtemp, IPtemp, IGtemp, SPk3, SGk3, IPk3, IGk3, E, p);
     
     for(i=0;i<p->strain_total;i++){
-        SAtemp[i] = SA[i]+h*(b41*DSADT[i]+b42*SAk2[i]+b43*SAk3[i]);
-        SBtemp[i] = SB[i]+h*(b41*DSBDT[i]+b42*SBk2[i]+b43*SBk3[i]);
-        IAtemp[i] = IA[i]+h*(b41*DIADT[i]+b42*IAk2[i]+b43*IAk3[i]);
-        IBtemp[i] = IB[i]+h*(b41*DIBDT[i]+b42*IBk2[i]+b43*IBk3[i]);
+        SPtemp[i] = SP[i]+h*(b41*DSPDT[i]+b42*SPk2[i]+b43*SPk3[i]);
+        SGtemp[i] = SG[i]+h*(b41*DSGDT[i]+b42*SGk2[i]+b43*SGk3[i]);
+        IPtemp[i] = IP[i]+h*(b41*DIPDT[i]+b42*IPk2[i]+b43*IPk3[i]);
+        IGtemp[i] = IG[i]+h*(b41*DIGDT[i]+b42*IGk2[i]+b43*IGk3[i]);
     }
-    dynamic(SAtemp, SBtemp, IAtemp, IBtemp, SAk4, SBk4, IAk4, IBk4, c, p);
+    dynamic(SPtemp, SGtemp, IPtemp, IGtemp, SPk4, SGk4, IPk4, IGk4, E, p);
     
     for(i=0;i<p->strain_total;i++){
-        SAtemp[i] = SA[i]+h*(b51*DSADT[i]+b52*SAk2[i]+b53*SAk3[i]+b54*SAk4[i]);
-        SBtemp[i] = SB[i]+h*(b51*DSBDT[i]+b52*SBk2[i]+b53*SBk3[i]+b54*SBk4[i]);
-        IAtemp[i] = IA[i]+h*(b51*DIADT[i]+b52*IAk2[i]+b53*IAk3[i]+b54*IAk4[i]);
-        IBtemp[i] = IB[i]+h*(b51*DIBDT[i]+b52*IBk2[i]+b53*IBk3[i]+b54*IBk4[i]);
+        SPtemp[i] = SP[i]+h*(b51*DSPDT[i]+b52*SPk2[i]+b53*SPk3[i]+b54*SPk4[i]);
+        SGtemp[i] = SG[i]+h*(b51*DSGDT[i]+b52*SGk2[i]+b53*SGk3[i]+b54*SGk4[i]);
+        IPtemp[i] = IP[i]+h*(b51*DIPDT[i]+b52*IPk2[i]+b53*IPk3[i]+b54*IPk4[i]);
+        IGtemp[i] = IG[i]+h*(b51*DIGDT[i]+b52*IGk2[i]+b53*IGk3[i]+b54*IGk4[i]);
     }
-    dynamic(SAtemp, SBtemp, IAtemp, IBtemp, SAk5, SBk5, IAk5, IBk5, c, p);
+    dynamic(SPtemp, SGtemp, IPtemp, IGtemp, SPk5, SGk5, IPk5, IGk5, E, p);
     
     for(i=0;i<p->strain_total;i++){
-        SAtemp[i] = SA[i]+h*(b61*DSADT[i]+b62*SAk2[i]+b63*SAk3[i]+b64*SAk4[i]+b65*SAk5[i]);
-        SBtemp[i] = SB[i]+h*(b61*DSBDT[i]+b62*SBk2[i]+b63*SBk3[i]+b64*SBk4[i]+b65*SBk5[i]);        
-        IAtemp[i] = IA[i]+h*(b61*DIADT[i]+b62*IAk2[i]+b63*IAk3[i]+b64*IAk4[i]+b65*IAk5[i]);
-        IBtemp[i] = IB[i]+h*(b61*DIBDT[i]+b62*IBk2[i]+b63*IBk3[i]+b64*IBk4[i]+b65*IBk5[i]);
+        SPtemp[i] = SP[i]+h*(b61*DSPDT[i]+b62*SPk2[i]+b63*SPk3[i]+b64*SPk4[i]+b65*SPk5[i]);
+        SGtemp[i] = SG[i]+h*(b61*DSGDT[i]+b62*SGk2[i]+b63*SGk3[i]+b64*SGk4[i]+b65*SGk5[i]);        
+        IPtemp[i] = IP[i]+h*(b61*DIPDT[i]+b62*IPk2[i]+b63*IPk3[i]+b64*IPk4[i]+b65*IPk5[i]);
+        IGtemp[i] = IG[i]+h*(b61*DIGDT[i]+b62*IGk2[i]+b63*IGk3[i]+b64*IGk4[i]+b65*IGk5[i]);
     }
-    dynamic(SAtemp, SBtemp, IAtemp, IBtemp, SAk6, SBk6, IAk6, IBk6, c, p);
+    dynamic(SPtemp, SGtemp, IPtemp, IGtemp, SPk6, SGk6, IPk6, IGk6, E, p);
     
     for(i=0;i<p->strain_total;i++){
-        SAout[i]= SA[i]+h*(c1*DSADT[i]+c3*SAk3[i]+c4*SAk4[i]+c6*SAk6[i]);
-        SAerr[i]= h*(dc1*DSADT[i]+dc3*SAk3[i]+dc4*SAk4[i]+dc5*SAk5[i]+dc6*SAk6[i]);
-        SBout[i]= SB[i]+h*(c1*DSBDT[i]+c3*SBk3[i]+c4*SBk4[i]+c6*SBk6[i]);
-        SBerr[i]= h*(dc1*DSBDT[i]+dc3*SBk3[i]+dc4*SBk4[i]+dc5*SBk5[i]+dc6*SBk6[i]);
-        IAout[i]= IA[i]+h*(c1*DIADT[i]+c3*IAk3[i]+c4*IAk4[i]+c6*IAk6[i]);
-        IAerr[i]= h*(dc1*DIADT[i]+dc3*IAk3[i]+dc4*IAk4[i]+dc5*IAk5[i]+dc6*IAk6[i]);
-        IBout[i]= IB[i]+h*(c1*DIBDT[i]+c3*IBk3[i]+c4*IBk4[i]+c6*IBk6[i]);
-        IBerr[i]= h*(dc1*DIBDT[i]+dc3*IBk3[i]+dc4*IBk4[i]+dc5*IBk5[i]+dc6*IBk6[i]);
+        SPout[i]= SP[i]+h*(c1*DSPDT[i]+c3*SPk3[i]+c4*SPk4[i]+c6*SPk6[i]);
+        SPerr[i]= h*(dc1*DSPDT[i]+dc3*SPk3[i]+dc4*SPk4[i]+dc5*SPk5[i]+dc6*SPk6[i]);
+        SGout[i]= SG[i]+h*(c1*DSGDT[i]+c3*SGk3[i]+c4*SGk4[i]+c6*SGk6[i]);
+        SGerr[i]= h*(dc1*DSGDT[i]+dc3*SGk3[i]+dc4*SGk4[i]+dc5*SGk5[i]+dc6*SGk6[i]);
+        IPout[i]= IP[i]+h*(c1*DIPDT[i]+c3*IPk3[i]+c4*IPk4[i]+c6*IPk6[i]);
+        IPerr[i]= h*(dc1*DIPDT[i]+dc3*IPk3[i]+dc4*IPk4[i]+dc5*IPk5[i]+dc6*IPk6[i]);
+        IGout[i]= IG[i]+h*(c1*DIGDT[i]+c3*IGk3[i]+c4*IGk4[i]+c6*IGk6[i]);
+        IGerr[i]= h*(dc1*DIGDT[i]+dc3*IGk3[i]+dc4*IGk4[i]+dc5*IGk5[i]+dc6*IGk6[i]);
     }
 
     /* Free memory */
-    free(SAk1);
-    free(SAk2);
-    free(SAk3);
-    free(SAk4);
-    free(SAk5);
-    free(SAk6);
-    free(SBk1);
-    free(SBk2);
-    free(SBk3);
-    free(SBk4);
-    free(SBk5);
-    free(SBk6);
-    free(SAtemp);
-    free(SBtemp);
-    free(IAk1);
-    free(IAk2);
-    free(IAk3);
-    free(IAk4);
-    free(IAk5);
-    free(IAk6);
-    free(IBk1);
-    free(IBk2);
-    free(IBk3);
-    free(IBk4);
-    free(IBk5);
-    free(IBk6);
-    free(IAtemp);
-    free(IBtemp);
+    free(SPk1);
+    free(SPk2);
+    free(SPk3);
+    free(SPk4);
+    free(SPk5);
+    free(SPk6);
+    free(SGk1);
+    free(SGk2);
+    free(SGk3);
+    free(SGk4);
+    free(SGk5);
+    free(SGk6);
+    free(SPtemp);
+    free(SGtemp);
+    free(IPk1);
+    free(IPk2);
+    free(IPk3);
+    free(IPk4);
+    free(IPk5);
+    free(IPk6);
+    free(IGk1);
+    free(IGk2);
+    free(IGk3);
+    free(IGk4);
+    free(IGk5);
+    free(IGk6);
+    free(IPtemp);
+    free(IGtemp);
 }
 
 /**************************************
  * Population and evolutionary dynamics
  **************************************/
-void dynamic(double *SA, double *SB, double *IA, double *IB,  double *DSADT, double *DSBDT, double *DIADT, double *DIBDT, double *c, struct PARAM *p){
+void dynamic(double *SP, double *SG, double *IP, double *IG,  double *DSPDT, double *DSGDT, double *DIPDT, double *DIGDT, double *E, struct PARAM *p){
     
     int i, j;
     double *Ni, N, infection_mult, information_mult;
@@ -559,7 +559,7 @@ void dynamic(double *SA, double *SB, double *IA, double *IB,  double *DSADT, dou
     /* Population sums */
     N = 0;
     for(i=0;i<p->strain_total;i++){
-        Ni[i] = SA[i] + SB[i] + IA[i] + IB[i];
+        Ni[i] = SP[i] + SG[i] + IP[i] + IG[i];
         N += Ni[i];
     }
     
@@ -567,18 +567,18 @@ void dynamic(double *SA, double *SB, double *IA, double *IB,  double *DSADT, dou
     infection_mult = 0;
     information_mult = 0;
     for(i=0;i<p->strain_total;i++){
-        infection_mult += c[i]*(IA[i]+IB[i]);
-        information_mult += c[i]*(SB[i]+IB[i]);
+        infection_mult += E[i]*(IP[i]+IG[i]);
+        information_mult += E[i]*(SG[i]+IG[i]);
     }
     infection_mult = p->beta*FMAX(infection_mult,TINY2)/FMAX(N,TINY2);
     information_mult = p->tau*FMAX(information_mult,TINY2)/FMAX(N,TINY2);
     
     /* ODEs */
     for(i=0;i<p->strain_total;i++){
-        DSADT[i] = (p->b - p->q*N)*Ni[i] - c[i]*SA[i]*(infection_mult + information_mult) - p->d*SA[i] + p->gamma*IA[i] + p->sigma*SB[i];
-        DSBDT[i] = c[i]*SA[i]*information_mult - c[i]*SB[i]*infection_mult - p->a*p->d*SB[i] + p->gamma*IB[i] - p->sigma*SB[i];
-        DIADT[i] = c[i]*SA[i]*infection_mult - c[i]*IA[i]*information_mult - (p->d + p->alpha + p->gamma)*IA[i] + p->sigma*IB[i];
-        DIBDT[i] = c[i]*SB[i]*infection_mult + c[i]*IA[i]*information_mult - (p->a*p->d + p->alpha + p->gamma + p->sigma)*IB[i];
+        DSPDT[i] = (p->b - p->q*N)*Ni[i] - E[i]*SP[i]*(infection_mult + information_mult) - p->d*SP[i] + p->gamma*IP[i] + p->sigma*SG[i];
+        DSGDT[i] = E[i]*SP[i]*information_mult - E[i]*SG[i]*infection_mult - p->a*p->d*SG[i] + p->gamma*IG[i] - p->sigma*SG[i];
+        DIPDT[i] = E[i]*SP[i]*infection_mult - E[i]*IP[i]*information_mult - (p->d + p->alpha + p->gamma)*IP[i] + p->sigma*IG[i];
+        DIGDT[i] = E[i]*SG[i]*infection_mult + E[i]*IP[i]*information_mult - (p->a*p->d + p->alpha + p->gamma + p->sigma)*IG[i];
     }
     
     /* Free memory */

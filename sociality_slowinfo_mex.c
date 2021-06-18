@@ -1,5 +1,5 @@
 /*******************************************************************************************
- * [t,x,EQFLAG] = sociality_slowinfo_mex(t_max,a,b,c,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop)
+ * [t,x,EQFLAG] = sociality_slowinfo_mex(t_max,a,b,E,d,q,alpha,beta,gamma,sigma,tau,eqtol,init_pop)
  ******************************************************************************************/
 
 #include <mex.h>
@@ -41,8 +41,8 @@ struct PARAM{
     double t_max;
     double a;
     double b;
-    double c;
-    double cc;
+    double E;
+    double EE;
     double d;
     double q; 
     double alpha;
@@ -84,8 +84,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         parameter= mxGetPr(prhs[2]);
         p.b= *parameter;
         parameter= mxGetPr(prhs[3]);
-        p.c= *parameter;
-        p.cc= p.c*p.c;
+        p.E= *parameter;
+        p.EE= p.E*p.E;
         parameter= mxGetPr(prhs[4]);
         p.d= *parameter;   
         parameter= mxGetPr(prhs[5]);        
@@ -334,20 +334,20 @@ void rkck(double *x, double *dxdt, double *xout, double *xerr, double h, struct 
  **************************************/
 void dynamic(double *x, double *dxdt, struct PARAM *p){
     
-    double SA, SB, IA, IB, N;
+    double SP, SG, IP, IG, N;
     int i, j;
     
     /* Define classes */
-    SA = x[0];
-    SB = x[1];
-    IA = x[2];
-    IB = x[3];    
-    N = SA+SB+IA+IB;
+    SP = x[0];
+    SG = x[1];
+    IP = x[2];
+    IG = x[3];    
+    N = SP+SG+IP+IG;
     
-    dxdt[0] = (p->b - p->q*N)*N - p->cc*SA*(p->beta*(IA + IB) + p->tau*(SB + IB))/FMAX(TINY,N) - p->d*SA + p->gamma*IA + p->sigma*SB;
-    dxdt[1] = p->cc*(p->tau*SA*(SB + IB) - p->beta*SB*(IA + IB))/FMAX(TINY,N) - p->a*p->d*SB + p->gamma*IB - p->sigma*SB;
-    dxdt[2] = p->cc*(p->beta*SA*(IA + IB) - p->tau*IA*(SB + IB))/FMAX(TINY,N) - (p->d + p->alpha + p->gamma)*IA + p->sigma*IB;
-    dxdt[3] = p->cc*(p->beta*SB*(IA + IB) + p->tau*IA*(SB + IB))/FMAX(TINY,N) - (p->a*p->d + p->alpha + p->gamma + p->sigma)*IB;
+    dxdt[0] = (p->b - p->q*N)*N - p->EE*SP*(p->beta*(IP + IG) + p->tau*(SG + IG))/FMAX(TINY,N) - p->d*SP + p->gamma*IP + p->sigma*SG;
+    dxdt[1] = p->EE*(p->tau*SP*(SG + IG) - p->beta*SG*(IP + IG))/FMAX(TINY,N) - p->a*p->d*SG + p->gamma*IG - p->sigma*SG;
+    dxdt[2] = p->EE*(p->beta*SP*(IP + IG) - p->tau*IP*(SG + IG))/FMAX(TINY,N) - (p->d + p->alpha + p->gamma)*IP + p->sigma*IG;
+    dxdt[3] = p->EE*(p->beta*SG*(IP + IG) + p->tau*IP*(SG + IG))/FMAX(TINY,N) - (p->a*p->d + p->alpha + p->gamma + p->sigma)*IG;
     
 }
 
