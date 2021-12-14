@@ -7,19 +7,11 @@ load('fig8.mat')
 gamma = 0.2;
 
 PARAM = SIGTAU;
-cols = [251,154,153
-    171,217,233
-    200,10,10
-    69,117,180
-    0,0,0
-    0,0,0
-    0,0,0
-    0,0,0
-    0,0,0]/255;
-% 1) social information threshold (pink)
-% 2) disease threshold (light blue)
-% 3) repeller (red)
-% 4) CSS (dark blue)
+cols = [171,217,233
+    251,154,153
+    20,50,180
+    180,50,20
+    220,220,220]/255;
 
 figure(8)
 clf
@@ -37,16 +29,63 @@ for i2=1:length(A)
     singstrat = permute(SINGSTRAT_SIGTAU_FAST(:,i2,:),[1,3,2]);
     outcome = permute(OUTCOME_SIGTAU_FAST(:,i2,:),[1,3,2]);
     
-    outcome2 = NaN*zeros(xres,9);
-    singstrat2 = NaN*zeros(xres,9);
-    for j=1:9
+    % rebuild arrays
+    outcome2 = NaN*zeros(xres,4);
+    singstrat2 = NaN*zeros(xres,4);
+    for j=1:4
         list = find(sum(outcome==j,2));
         outcome2(list,j)=j;
         for k=1:length(list)
-            singstrat2(list(k),j) = singstrat(list(k),find(outcome(list(k),:)==j,1));
+            singstrat2(list(k),j) = singstrat(list(k),outcome(list(k),:)==j);
         end
     end
-    ALPHA = (singstrat2.^2.*(a.*d + gamma).*tau - d.*repmat(SIGTAU',[1,9]).*(-1 + a))./(singstrat2.^2.*tau);
+    
+    % Fill in direction of selection
+    
+    % Fill background
+    patch([SIGTAU(1);SIGTAU(end);SIGTAU(end);SIGTAU(1)],[SIGTAU(1),SIGTAU(1),SIGTAU(end),SIGTAU(end)],cols(2,:),'linestyle','none')
+    
+    %         % fill +ve between outcome2==1 and outcome2==4 and above outcome2==3
+    %
+    %         pos1_lower = singstrat2(~isnan(singstrat2(:,1)),1);
+    %         pos1_upper = min(ymax+1,singstrat2(:,4));
+    %
+    %         patch([SIGTAU(1:length(pos1_lower))';SIGTAU(length(pos1_lower):-1:1)'],[pos1_upper(1:length(pos1_lower));flipud(pos1_lower)],cols(2,:),'linestyle','none');
+    %
+    %         pos2_lower = neg_upper;
+    %         pos2_upper = ymax+0*pos2_lower;
+    %
+    %         patch([SIGTAU';flipud(SIGTAU')],[pos2_lower;pos2_upper],cols(2,:),'linestyle','none')
+    
+    
+    % fill -ve between outcome2==1 and outcome2==3
+    
+    % patch([(75:101)';(101:-1:75)'],[singstrat2(75:end,2);flipud(singstrat2(75:end,3))],'r')
+    
+    neg_upper = singstrat2(:,3); neg_upper(isnan(neg_upper))=ymax;
+    neg_upper = min(ymax,neg_upper);
+    
+    neg_lower = sum([singstrat2(:,2),singstrat2(:,4)],2,'omitnan');
+    neg_lower(neg_lower==0)=ymax+1;
+    
+    patch([SIGTAU';flipud(SIGTAU')],[neg_lower;flipud(neg_upper)],cols(1,:),'linestyle','none')
+    
+    % fill neutral between outcome2==1 and
+    
+    neutral_lower = zeros(length(SIGTAU),1);
+    neutral_upper = min([singstrat2(:,1),singstrat2(:,2)],[],2,'omitnan');
+    
+    patch([SIGTAU';flipud(SIGTAU')],[neutral_lower;flipud(neutral_upper)],cols(5,:),'linestyle','none')
+    
+    xlim([SIGTAU(1),SIGTAU(end)])
+    ylim([0,ymax])
+    
+    set(gca,'xtick',[0.1,1,10])
+    set(gca,'xscale','log')
+    box on
+    set(gca,'fontsize',10)
+    
+    ALPHA = (singstrat2.^2.*(a.*d + gamma).*tau - d.*repmat(SIGTAU',[1,4]).*(-1 + a))./(singstrat2.^2.*tau);
     ALPHA(:,[1,3,5:9])=0;
     ALPHA(~isnan(ALPHA(:,2)),2) = gamma+d;
     ALPHA(isnan(ALPHA))=0;
@@ -56,48 +95,41 @@ for i2=1:length(A)
     
     yyaxis left
     hold on
-    plot(SIGTAU,sqrt(SIGTAU),'-','color',0.8*[1,1,1],'linewidth',1.5) % Fast information threshold (no disease)
-    plot(SIGTAU,sqrt((d+ALPHA+gamma)./BETA),'-','color',0.8*[1,1,1],'linewidth',1.5) % Disease threshold (no information)
+%     plot(SIGTAU,sqrt(SIGTAU),'k--','linewidth',1) % Fast information threshold (no disease)
+%     plot(SIGTAU,sqrt((d+ALPHA+gamma)./BETA),'k:','linewidth',1.5) % Disease threshold (no information)
+
+    neg_lower(neg_lower>ymax)=NaN;
+    plot(SIGTAU,neg_lower,'--','color',cols(3,:),'linewidth',2)
     
-    % Plot each outcome
-    for j=1:9
-        list = find(outcome2(:,j)==j);
-        while(~isempty(list))
-            list_diff = diff(list);
-            seg_length = find(list_diff>1);
-            if(isempty(seg_length))
-                seg_length=length(list);
-            end
-            list_seg = list(1:seg_length);
-            yyaxis left
-            hold on
-            plot(PARAM(list_seg),singstrat2(list_seg,j),'-','color',cols(j,:),'linewidth',1.5)
-            list(1:seg_length)=[];
-        end
-    end
-    xlim([floor(PARAM(1)),ceil(PARAM(end))])
-    set(gca,'xtick',[0.1,1,10])
-    set(gca,'xscale','log')
-    yyaxis left
-    set(gca,'fontsize',10)
-    set(gca,'ycolor','k')
-    ylim([0,ymax])
+    title(strcat('$a=',num2str(A(i2)),'$'),'interpreter','latex','fontsize',12);
     text(SIGTAU(1),ymax*1.05,labs{i2},'fontsize',12,'interpreter','latex')
+    
+    if(i2==1)
+        text(5,4.5,'+','fontsize',20,'fontweight','bold')
+        text(0.2,3,'-','fontsize',20,'fontweight','bold')
+        text(11,3,'-','fontsize',20,'fontweight','bold')
+        text(11,0.5,'0','fontsize',14,'fontweight','bold')
+    else
+        text(5,4.5,'+','fontsize',20,'fontweight','bold')
+        text(0.15,0.9,'+','fontsize',20,'fontweight','bold')
+        text(0.2,3,'-','fontsize',20,'fontweight','bold')
+        text(11,0.5,'0','fontsize',14,'fontweight','bold')
+    end
+
     yyaxis right
-    plot(SIGTAU,ALPHA,'k-','linewidth',1.5)
+    plot(SIGTAU,ALPHA,'k:','linewidth',2)
     set(gca,'ycolor','k')
     set(gca,'fontsize',10)
     ylim([0,1])
-    box on
-    title(strcat('$a=',num2str(A(i2)),'$'),'interpreter','latex','fontsize',12);    
+    
 end
 
 for i=1:3
-subplot(1,3,i)
-yyaxis left
-ylabel('Contact effort, $E$','interpreter','latex','fontsize',16);
-yyaxis right
-ylabel('Virulence, $\alpha$','interpreter','latex','fontsize',16);
+    subplot(1,3,i)
+    yyaxis left
+    ylabel('Contact effort, $E$','interpreter','latex','fontsize',16);
+    yyaxis right
+    ylabel('Virulence, $\alpha$','interpreter','latex','fontsize',16);
 end
 
 subplot(1,3,2)
@@ -142,7 +174,7 @@ for i2=1:length(A)
     tic;
     parfor i1=1:length(SIGTAU)
         [singstrat,outcome] = singstrat_fastinfo_coevo_approx(A(i2),Emin,Emax,d,kappa,gamma,SIGTAU(i1)*tau,tau,res1);
-        
+
         NUM_OUTCOMES_SIGTAU_FAST(i1,i2) = length(singstrat);
         SINGSTRAT_SIGTAU_FAST1(i1,i2) = singstrat(1);
         OUTCOME_SIGTAU_FAST1(i1,i2) = outcome(1);

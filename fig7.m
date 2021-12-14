@@ -52,7 +52,7 @@ text(E(end)*0.75,disprev(end)*0.9,'$\frac{I_P+I_G}{N}$','interpreter','latex','f
 set(gca,'ycolor','k')
 
 xlabel('Contact effort, $E$','interpreter','latex','fontsize',16);
-ylabel('Disease prevalence','interpreter','latex','fontsize',16);
+ylabel('Infection prevalence','interpreter','latex','fontsize',16);
 box on
 
 % save2pdf('fig7.pdf');

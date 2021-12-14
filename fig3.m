@@ -76,7 +76,7 @@ for sub=1:2
         temp(1)=temp(1)+0.6;
         temp(2)=temp(2)+0.01;
         set(x1,'position',temp);
-        ylabel('Disease prevalence','interpreter','latex','fontsize',14)
+        ylabel('Infection prevalence','interpreter','latex','fontsize',14)
     end
     text(0,1.05,labs{sub},'interpreter','latex','fontsize',12)
     title(strcat('$a=',num2str(a),', \alpha=',num2str(alpha),'$'),'interpreter','latex','fontsize',10);

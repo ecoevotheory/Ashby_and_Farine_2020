@@ -91,7 +91,7 @@ set(gca,'fontsize',10)
 set(gca,'yscale','log')
 ylim([1,ymax])
 text(0,140,labs1{2},'interpreter','latex','fontsize',12)
-title('Disease','interpreter','latex','fontsize',14);
+title('Infection','interpreter','latex','fontsize',14);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

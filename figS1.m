@@ -1,17 +1,13 @@
-function fig4
+function figS1
 
-if(~exist('fig4.mat','file'))
-    fig4_data;
+if(~exist('figS1.mat','file'))
+    figS1_data;
 end
-load('fig4.mat')
-beta=0.2;
-gamma=0.2;
-tau=0.2;
-i1 = 1;
+load('figS1.mat')
+% beta=0.2;
+% gamma=0.2;
+% tau=0.2;
 ymax = 5;
-
-simstart = [1.25,3.8,4.2,4.5];
-simsigtau = [1,3,3,15];
 
 cols = [171,217,233
     251,154,153
@@ -19,7 +15,7 @@ cols = [171,217,233
     180,50,20
     220,220,220]/255;
 
-figure(4)
+figure(9)
 clf
 set(gcf,'color','w')
 set(gcf,'PaperUnits','centimeters')
@@ -37,8 +33,8 @@ for i3=1:length(A)
         sub=sub+1;
         subplot(length(A),length(ALPHA),sub)
         
-        singstrat = permute(SINGSTRAT_SIGTAU_SLOW(:,i1,i2,i3,:),[1,5,3,4,2]);
-        outcome = permute(OUTCOME_SIGTAU_SLOW(:,i1,i2,i3,:),[1,5,3,4,2]);
+        singstrat = permute(SINGSTRAT_SIGTAU_FAST(:,i2,i3,:),[1,4,3,2]);
+        outcome = permute(OUTCOME_SIGTAU_FAST(:,i2,i3,:),[1,4,3,2]);
         
         % rebuild arrays
         outcome2 = NaN*zeros(xres,4);
@@ -90,7 +86,7 @@ for i3=1:length(A)
         
         xlim([SIGTAU(1),SIGTAU(end)])
         ylim([0,ymax])
-        
+
         hold on
         neg_lower(neg_lower>ymax)=NaN;
         plot(SIGTAU,neg_lower,'--','color',cols(3,:),'linewidth',2)
@@ -112,30 +108,13 @@ for i3=1:length(A)
         end
         title(strcat('$a=',num2str(A(i3)),', \alpha=',num2str(ALPHA(i2)),'$'),'interpreter','latex','fontsize',10);
         
-        hold on
-        if(sub==3)
-            plot(2,1.6,'ko','markerfacecolor','k','markersize',5)
-            text(1.3,1.3,'Fig. 6','fontsize',10)
-        elseif(sub==4)
-            plot(simsigtau,simstart,'ko','markerfacecolor','k','markersize',5)
-            text(0.6,0.9,'Fig. 5a','fontsize',10)
-            text(1,3.6,'Fig. 5b','fontsize',10)
-            text(1,4.5,'Fig. 5c','fontsize',10)
-            text(6.5,4.2,'Fig. 5d','fontsize',10)
-        end
-        
         if(sub==4)
-            text(4.5,4.75,'+','fontsize',20,'fontweight','bold')
-            text(0.15,1.5,'+','fontsize',20,'fontweight','bold')
-            text(0.2,3,'-','fontsize',20,'fontweight','bold')
-            text(11,1,'0','fontsize',14,'fontweight','bold')
-        elseif(sub==2)
-            text(4.5,4.5,'+','fontsize',20,'fontweight','bold')
-            text(0.15,1.2,'+','fontsize',20,'fontweight','bold')
+            text(7,4.5,'+','fontsize',20,'fontweight','bold')
+            text(0.15,1.4,'+','fontsize',20,'fontweight','bold')
             text(0.2,3,'-','fontsize',20,'fontweight','bold')
             text(11,1,'0','fontsize',14,'fontweight','bold')
         else
-            text(4.5,4.5,'+','fontsize',20,'fontweight','bold')
+            text(7,4.5,'+','fontsize',20,'fontweight','bold')
             text(0.2,3,'-','fontsize',20,'fontweight','bold')
             text(11,3,'-','fontsize',20,'fontweight','bold')
             text(11,1,'0','fontsize',14,'fontweight','bold')
@@ -143,9 +122,10 @@ for i3=1:length(A)
     end
 end
 
-% save2pdf('fig4.pdf')
+% save2pdf('figS1.pdf')
 
-function fig4_data
+
+function figS1_data
 
 % Fixed and default parameter values
 t_max = 1000;
@@ -166,61 +146,58 @@ A = [0,0.2];
 ALPHA = [0.3,0.4];
 
 % OUTPUTS
-SINGSTRAT_SIGTAU_SLOW1 = NaN*zeros(xres,1,length(ALPHA),length(A));
-SINGSTRAT_SIGTAU_SLOW2 = NaN*zeros(xres,1,length(ALPHA),length(A));
-SINGSTRAT_SIGTAU_SLOW3 = NaN*zeros(xres,1,length(ALPHA),length(A));
-SINGSTRAT_SIGTAU_SLOW4 = NaN*zeros(xres,1,length(ALPHA),length(A));
-SINGSTRAT_SIGTAU_SLOW5 = NaN*zeros(xres,1,length(ALPHA),length(A));
-OUTCOME_SIGTAU_SLOW1 = NaN*zeros(xres,1,length(ALPHA),length(A));
-OUTCOME_SIGTAU_SLOW2 = NaN*zeros(xres,1,length(ALPHA),length(A));
-OUTCOME_SIGTAU_SLOW3 = NaN*zeros(xres,1,length(ALPHA),length(A));
-OUTCOME_SIGTAU_SLOW4 = NaN*zeros(xres,1,length(ALPHA),length(A));
-OUTCOME_SIGTAU_SLOW5 = NaN*zeros(xres,1,length(ALPHA),length(A));
-NUM_OUTCOMES_SIGTAU_SLOW = NaN*zeros(xres,1,length(ALPHA),length(A));
+SINGSTRAT_SIGTAU_FAST1 = NaN*zeros(xres,length(ALPHA),length(A));
+SINGSTRAT_SIGTAU_FAST2 = NaN*zeros(xres,length(ALPHA),length(A));
+SINGSTRAT_SIGTAU_FAST3 = NaN*zeros(xres,length(ALPHA),length(A));
+SINGSTRAT_SIGTAU_FAST4 = NaN*zeros(xres,length(ALPHA),length(A));
+SINGSTRAT_SIGTAU_FAST5 = NaN*zeros(xres,length(ALPHA),length(A));
+OUTCOME_SIGTAU_FAST1 = NaN*zeros(xres,length(ALPHA),length(A));
+OUTCOME_SIGTAU_FAST2 = NaN*zeros(xres,length(ALPHA),length(A));
+OUTCOME_SIGTAU_FAST3 = NaN*zeros(xres,length(ALPHA),length(A));
+OUTCOME_SIGTAU_FAST4 = NaN*zeros(xres,length(ALPHA),length(A));
+OUTCOME_SIGTAU_FAST5 = NaN*zeros(xres,length(ALPHA),length(A));
+NUM_OUTCOMES_SIGTAU_FAST = NaN*zeros(xres,length(ALPHA),length(A));
 
+% Fast info version depends on SIGTAU, so can fix tau
 COUNT = 0;
 TOTAL = length(A)*length(ALPHA);
-
-for i4=1:length(A)
-    for i3=1:length(ALPHA)
-         
-        % Sweep over SIGTAU
-        for i2=1:1
-            tic;
-            parfor i1=1:length(SIGTAU)
-                [singstrat,outcome] = singstrat_slowinfo(t_max,A(i4),b,Emin,Emax,d,q,ALPHA(i3),beta,gamma,SIGTAU(i1)*tau,tau,res1);
-                
-                NUM_OUTCOMES_SIGTAU_SLOW(i1,i2,i3,i4) = length(singstrat);
-                SINGSTRAT_SIGTAU_SLOW1(i1,i2,i3,i4) = singstrat(1);
-                OUTCOME_SIGTAU_SLOW1(i1,i2,i3,i4) = outcome(1);
-                if(NUM_OUTCOMES_SIGTAU_SLOW(i1,i2,i3,i4)>1)
-                    SINGSTRAT_SIGTAU_SLOW2(i1,i2,i3,i4) = singstrat(2);
-                    OUTCOME_SIGTAU_SLOW2(i1,i2,i3,i4) = outcome(2);
-                    if(NUM_OUTCOMES_SIGTAU_SLOW(i1,i2,i3,i4)>2)
-                        SINGSTRAT_SIGTAU_SLOW3(i1,i2,i3,i4) = singstrat(3);
-                        OUTCOME_SIGTAU_SLOW3(i1,i2,i3,i4) = outcome(3);
-                        if(NUM_OUTCOMES_SIGTAU_SLOW(i1,i2,i3,i4)>3)
-                            SINGSTRAT_SIGTAU_SLOW4(i1,i2,i3,i4) = singstrat(4);
-                            OUTCOME_SIGTAU_SLOW4(i1,i2,i3,i4) = outcome(4);
-                            if(NUM_OUTCOMES_SIGTAU_SLOW(i1,i2,i3,i4)>4)
-                                SINGSTRAT_SIGTAU_SLOW5(i1,i2,i3,i4) = singstrat(5);
-                                OUTCOME_SIGTAU_SLOW5(i1,i2,i3,i4) = outcome(5);
-                            end
+for i3=1:length(A)
+    for i2=1:length(ALPHA)
+        % Sweep over SIGTAU        
+        tic;
+        parfor i1=1:length(SIGTAU)
+            [singstrat,outcome] = singstrat_fastinfo(A(i3),Emin,Emax,d,ALPHA(i2),beta,gamma,SIGTAU(i1)*tau,tau,res1);
+            
+            NUM_OUTCOMES_SIGTAU_FAST(i1,i2,i3) = length(singstrat);
+            SINGSTRAT_SIGTAU_FAST1(i1,i2,i3) = singstrat(1);
+            OUTCOME_SIGTAU_FAST1(i1,i2,i3) = outcome(1);
+            if(NUM_OUTCOMES_SIGTAU_FAST(i1,i2,i3)>1)
+                SINGSTRAT_SIGTAU_FAST2(i1,i2,i3) = singstrat(2);
+                OUTCOME_SIGTAU_FAST2(i1,i2,i3) = outcome(2);
+                if(NUM_OUTCOMES_SIGTAU_FAST(i1,i2,i3)>2)
+                    SINGSTRAT_SIGTAU_FAST3(i1,i2,i3) = singstrat(3);
+                    OUTCOME_SIGTAU_FAST3(i1,i2,i3) = outcome(3);
+                    if(NUM_OUTCOMES_SIGTAU_FAST(i1,i2,i3)>3)
+                        SINGSTRAT_SIGTAU_FAST4(i1,i2,i3) = singstrat(4);
+                        OUTCOME_SIGTAU_FAST4(i1,i2,i3) = outcome(4);
+                        if(NUM_OUTCOMES_SIGTAU_FAST(i1,i2,i3)>4)
+                            SINGSTRAT_SIGTAU_FAST5(i1,i2,i3) = singstrat(5);
+                            OUTCOME_SIGTAU_FAST5(i1,i2,i3) = outcome(5);
                         end
                     end
                 end
             end
-            toc;
-            COUNT=COUNT+1;
-            PROGRESS = COUNT/TOTAL
         end
+        toc;
+        COUNT=COUNT+1;
+        PROGRESS = COUNT/TOTAL
     end
 end
 
 % Combine results
-SINGSTRAT_SIGTAU_SLOW = cat(5,SINGSTRAT_SIGTAU_SLOW1,SINGSTRAT_SIGTAU_SLOW2,SINGSTRAT_SIGTAU_SLOW3,SINGSTRAT_SIGTAU_SLOW4,SINGSTRAT_SIGTAU_SLOW5);
-OUTCOME_SIGTAU_SLOW = cat(5,OUTCOME_SIGTAU_SLOW1,OUTCOME_SIGTAU_SLOW2,OUTCOME_SIGTAU_SLOW3,OUTCOME_SIGTAU_SLOW4,OUTCOME_SIGTAU_SLOW5);
+SINGSTRAT_SIGTAU_FAST = cat(4,SINGSTRAT_SIGTAU_FAST1,SINGSTRAT_SIGTAU_FAST2,SINGSTRAT_SIGTAU_FAST3,SINGSTRAT_SIGTAU_FAST4,SINGSTRAT_SIGTAU_FAST5);
+OUTCOME_SIGTAU_FAST = cat(4,OUTCOME_SIGTAU_FAST1,OUTCOME_SIGTAU_FAST2,OUTCOME_SIGTAU_FAST3,OUTCOME_SIGTAU_FAST4,OUTCOME_SIGTAU_FAST5);
 
 clear i1 i2 i3 i4 singstrat outcome tau ans COUNT TOTAL PROGRESS
-clear SINGSTRAT_SIGTAU_SLOW1 SINGSTRAT_SIGTAU_SLOW2 SINGSTRAT_SIGTAU_SLOW3 SINGSTRAT_SIGTAU_SLOW4 SINGSTRAT_SIGTAU_SLOW5 OUTCOME_SIGTAU_SLOW1 OUTCOME_SIGTAU_SLOW2 OUTCOME_SIGTAU_SLOW3 OUTCOME_SIGTAU_SLOW4 OUTCOME_SIGTAU_SLOW5
-save('fig4.mat')
+clear SINGSTRAT_SIGTAU_FAST1 SINGSTRAT_SIGTAU_FAST2 SINGSTRAT_SIGTAU_FAST3 SINGSTRAT_SIGTAU_FAST4 SINGSTRAT_SIGTAU_FAST5 OUTCOME_SIGTAU_FAST1 OUTCOME_SIGTAU_FAST2 OUTCOME_SIGTAU_FAST3 OUTCOME_SIGTAU_FAST4 OUTCOME_SIGTAU_FAST5
+save('figS1.mat')
